@@ -2,11 +2,13 @@
 #include <iostream>
 #include <memory>
 #include <random>
+#include <cstdio>
 
 class Cluster;
 using ClusterPtr = std::shared_ptr<Cluster>;
+using ClusterWPtr = std::weak_ptr<Cluster>;
 
-class Cluster
+class Cluster : public std::enable_shared_from_this<Cluster>
 {
 public:
     Cluster(int k) : m_iId(k), m_iSize(1) {}
@@ -22,25 +24,6 @@ public:
         return m_iSize;
     }
 
-    bool operator==(const Cluster& rhs)
-    {
-        return this->m_iId == rhs.m_iId;
-    }
-
-    bool operator!=(const Cluster& rhs)
-    {
-        return !(*this == rhs);
-    }
-
-    Cluster& operator=(Cluster other)
-    {
-        std::cout << "copy assignment of A\n";
-        std::swap(m_iId, other.m_iId);
-        std::swap(m_pRoot, other.m_pRoot);
-        std::swap(m_iSize, other.m_iSize);
-        return *this;
-    }
-
     void merge(ClusterPtr c)
     {
         if (this == c.get())
@@ -48,16 +31,16 @@ public:
             m_iSize++;
             return;
         }
-        if (c->m_pRoot != nullptr)
+        ClusterPtr x = c;
+        while (x->m_pRoot)
         {
-            merge(m_pRoot);
+            x = x->m_pRoot;
+            std::cout << "Merging the root\n";
         }
-        else
-        {
-            m_iSize += c->getSize() + 1;
-            c->m_iSize = 0;
-            c->m_pRoot = static_cast<ClusterPtr>(this);
-        }
+        m_iSize += x->getSize() + 1;
+        x->m_iSize = 0;
+        x->m_pRoot.reset();
+        x->m_pRoot = shared_from_this();
     }
 };
 
@@ -73,16 +56,22 @@ void print_grid(const std::vector<std::vector<int>>& grid)
     }
 }
 
-void print_clusters(const std::vector<ClusterPtr>& clusters)
+int print_clusters(const std::vector<ClusterPtr>& clusters)
 {
+    int tot_cluster_size = 0;
     for (const auto& x : clusters)
     {
+        
         if (x && x->m_pRoot == nullptr)
+        {
             std::cout << "cluster label: " << x->m_iId << "  cluster size: " << x->getSize() << "\n";
+            tot_cluster_size += x->getSize();
+        }
     }
+    return tot_cluster_size;
 }
 
-void print_clusters(const std::vector<int>& clusters)
+int print_clusters(const std::vector<int>& clusters)
 {
     int tot_cluster_size = 0;
     for (int i = 0; i < clusters.size(); i++)
@@ -91,7 +80,7 @@ void print_clusters(const std::vector<int>& clusters)
             tot_cluster_size += clusters[i];
         std::cout << "cluster label: " << i << "  cluster size: " << clusters[i] << "\n";
     }
-    std::cout << "total number of sites in all clusters: " << tot_cluster_size << "\n";
+    return tot_cluster_size;
 }
 
 void hoshen_kopelman2(std::vector<std::vector<int>>& grid, std::vector<int>& clusters, int n, int m)
@@ -196,14 +185,14 @@ void hoshen_kopelman(std::vector<std::vector<int>>& grid, std::vector<ClusterPtr
                     if (clusters[left]->m_iSize > clusters[top]->m_iSize)
                     {
                         left_cluster->merge(top_cluster);
-                        clusters[top] = left_cluster;
+                        //clusters[top] = left_cluster;
                         grid[i-1][j] = left;
                         grid[i][j] = left;
                     }
                     else
                     {
                         top_cluster->merge(left_cluster);
-                        clusters[left] = top_cluster;
+                        //clusters[left] = top_cluster;
                         grid[i][j-1] = top;
                         grid[i][j] = top;
                     }
@@ -235,23 +224,24 @@ int fill_grid(std::vector<std::vector<int>>& grid, double p)
 
 
 
-int main()
+int main(int argc, char** argv)
 {
     //std::vector<std::vector<int>> grid = { {1, 0, 0, 1, 0, 0}, 
     //                                       {0, 1, 1, 1, 1, 0},
     //                                       {0, 0, 1, 0, 0, 0},
-    //                                       {1, 1, 0, 1, 1, 0},
-    //                                       {0, 0, 1, 1, 0, 1},
+    //                                       {1, 0, 0, 1, 1, 0},
+    //                                       {0, 1, 1, 1, 0, 1},
     //                                       {0, 0, 0, 0, 1, 1}};
-    int dim = 10;
+    //int occ_sites = 15;
+    int dim = 100;
+    if (argc == 2)
+        dim = atoi(argv[1]);
     std::vector<std::vector<int>> grid(dim, std::vector<int>(dim));
     int occ_sites = fill_grid(grid, 0.6);
-    //std::vector<int> clusters(dim*dim, 0);
-    //hoshen_kopelman2(grid, clusters, grid[0].size(), grid.size());
+    
     std::vector<ClusterPtr> clusters(grid[0].size()*grid.size()+2);
     hoshen_kopelman(grid, clusters, grid[0].size(), grid.size());
     print_grid(grid);
-    print_clusters(clusters);
-    std::cout << occ_sites << "\n";
-    std::getchar();
+    int found_clusters = print_clusters(clusters);
+    std::cout <<"Occupied sites: " << occ_sites << "Found in clusters: " << found_clusters << "\n";
 }
