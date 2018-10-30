@@ -1,0 +1,5 @@
+﻿  hoshen_kopelman.cpp
+f:\code\percolation\hoshen_kopelman.cpp(35): warning C4018: '<': signed/unsigned mismatch
+f:\code\percolation\hoshen_kopelman.cpp(37): warning C4018: '<': signed/unsigned mismatch
+f:\code\percolation\hoshen_kopelman.cpp(57): warning C4018: '<': signed/unsigned mismatch
+  hk.vcxproj -> F:\Code\Percolation\build\Debug\hk.exe
