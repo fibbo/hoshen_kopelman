@@ -128,14 +128,11 @@ int main(int argc, char** argv)
     if (argc == 2)
         dim = atoi(argv[1]);
     std::vector<std::vector<int>> grid(dim, std::vector<int>(dim));
-    int occ_sites = fill_grid(grid, 0.6);
+    int occupied_sites = fill_grid(grid, 0.6);
     std::map<int, int> clusters{};
     hoshen_kopelman(grid, clusters, grid[0].size(), grid.size());
     int found_clusters = print_clusters(clusters);
-    std::cout <<"Occupied sites: " << occ_sites << "Found in clusters: " << found_clusters << "\n";
+    std::cout <<"Occupied sites: " << occupied_sites << "\tTotal sites found in clusters: " << found_clusters << "\n";
 
-    std::map<int, int> myMap{};
-    myMap[1] = 4;
-    myMap[4] = 2;
     std::getchar();
 }
